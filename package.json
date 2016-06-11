@@ -39,7 +39,8 @@
     "isobject": "~2.0.0",
     "object-assign": "~4.0.1",
     "x-ray-crawler": "~2.0.1",
-    "x-ray-parse": "~1.0.1"
+    "x-ray-parse": "~1.0.1",
+    "garage": "0.0.6"
   },
   "devDependencies": {
     "concat-stream": "~1.5.1",

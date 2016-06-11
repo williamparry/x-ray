@@ -15,6 +15,8 @@ var cheerio = require('cheerio')
 var enstore = require('enstore')
 var walk = require('./lib/walk')
 var fs = require('fs')
+var garage = require("garage");
+var storage;
 
 var CONST = {
   CRAWLER_METHODS: ['concurrency', 'throttle', 'timeout', 'driver', 'delay', 'limit'],
@@ -30,6 +32,8 @@ function Xray (options) {
   var crawler = Crawler()
   options = options || {}
   var filters = options.filters || {}
+  
+  storage = new garage(options.cache || "./cache");
 
   function xray (source, scope, selector) {
     var args = params(source, scope, selector)
@@ -183,13 +187,46 @@ function Xray (options) {
 }
 
 function Request (crawler) {
+
   return function request (url, fn) {
+
     debug('fetching %s', url)
-    crawler(url, function (err, ctx) {
-      if (err) return fn(err)
-      debug('got response for %s with status code: %s', url, ctx.status)
-      return fn(null, ctx.body)
-    })
+
+    storage.get(url, function(err, storedResult) {
+
+      if(storedResult) {
+
+        debug('fetch from cache: %s', url);
+
+        return fn(null, storedResult.toString('utf8'));
+
+      }
+
+      debug('Fetch from web: %s', url);
+
+      crawler(url, function (err, ctx) {
+        
+        if (err) return fn(err)
+        
+        debug('Save URL to cache: %s', url);
+
+        storage.put(url,ctx.body, function(err){
+         
+          if(err) {
+            
+            return fn(err);
+            
+          }
+          
+          return fn(null, ctx.body)
+          
+        });
+        
+      })
+      
+    });
+    
+    
   }
 }
 
